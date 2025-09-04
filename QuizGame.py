@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Optional
 from Questions import EasyQuestion, MediumQuestion, HardQuestion, Question
 from Player import Player, save_score, show_leaderboard
 
-
+#Difficulties and Grade Levels
 DIFF_TO_CLASS = {
     "Easy": EasyQuestion,
     "Medium": MediumQuestion,
@@ -100,6 +100,7 @@ class QuizGame:
             i += 1
 
     @staticmethod
+    #staticmethod bundles utilities within the class
     def _looks_like_qnum(line: str) -> bool:
         #e.g., "1. What is ..." or "1.\tWhat is ..."
         return len(line) > 2 and line.split(".", 1)[0].strip().isdigit()
