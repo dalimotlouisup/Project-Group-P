@@ -18,19 +18,8 @@ DIFFICULTIES = ["Easy", "Medium", "Hard"]
 
 
 class QuizGame:
-    """Text-based quiz/trivia game engine.
-
-    Responsibilities (per spec):
-      - Maintain a question bank (list[Question])
-      - Track score
-      - Display questions & check answers
-      - Shuffle & reset
-
-    Extras implemented:
-      - Parse questions from a single Question_Bank.txt (Elementary/High School → Easy/Medium/Hard)
-      - Customizable session by grade level & difficulty
-      - Basic save/resume functionality (bonus)
-      - Integration with Player leaderboard helpers in Player.py
+    """
+    Class QuizGame is the main class for the program to function.
     """
 
     def __init__(self, questions_file: str = "Question_Bank.txt"):
@@ -49,13 +38,17 @@ class QuizGame:
 
     #File Parsing
     def _load_questions_from_file(self) -> None:
+        '''
+        Reads the questions found in Question_Bank.txt.
+        Uses os module to prevent problems of not detecting the file
+        '''
         if not os.path.exists(self.questions_file):
             raise FileNotFoundError(f"Cannot find '{self.questions_file}'. Place it beside QuizGame.py.")
 
         with open(self.questions_file, "r", encoding="utf-8") as f:
             lines = [line.rstrip("\n") for line in f]
 
-        # State machine for sections
+        #State machine for sections
         grade: Optional[str] = None
         difficulty: Optional[str] = None
 
@@ -67,7 +60,7 @@ class QuizGame:
                 i += 1
                 continue
 
-            # Detect grade level headers
+            #Detect grade level headers
             if line.upper().startswith("ELEMENTARY LEVEL"):
                 grade = "ELEMENTARY"
                 difficulty = None
@@ -79,7 +72,7 @@ class QuizGame:
                 i += 1
                 continue
 
-            # Detect difficulty headers
+            #Detect difficulty headers
             if line.startswith("Easy") and grade:
                 difficulty = "Easy"
                 i += 1
@@ -93,7 +86,7 @@ class QuizGame:
                 i += 1
                 continue
 
-            # Parse a question block if inside a valid section
+            #Parse a question block if inside a valid section
             if grade and difficulty and self._looks_like_qnum(line):
                 q_text, answers, correct_letter, consumed = self._parse_question_block(lines, i)
                 i = consumed  # move index to the line after the block
@@ -108,7 +101,7 @@ class QuizGame:
 
     @staticmethod
     def _looks_like_qnum(line: str) -> bool:
-        # e.g., "1. What is ..." or "1.\tWhat is ..."
+        #e.g., "1. What is ..." or "1.\tWhat is ..."
         return len(line) > 2 and line.split(".", 1)[0].strip().isdigit()
 
     @staticmethod
@@ -117,16 +110,16 @@ class QuizGame:
         Parse one question + 4 choices + Answer: X
         Returns (question_text, answers[list of 4], correct_letter, next_index)
         """
-        # Question line contains: "1.\tWhat is the capital ..."
+        #Question line contains: "1.\tWhat is the capital ..."
         q_line = lines[start_idx]
         q_text = q_line.split(".", 1)[1].strip()  # take text after the first period
 
-        # Next 4 lines are choices: " a) Cebu" etc.
+        #Next 4 lines are choices: " a) Cebu" etc.
         answers = []
         idx = start_idx + 1
         for _ in range(4):
             choice_line = lines[idx].strip()
-            # Expect pattern like "a) Cebu" or "a)  Cebu"
+            #Expect pattern like "a) Cebu" or "a)  Cebu"
             if ")" in choice_line:
                 after = choice_line.split(")", 1)[1].strip()
             else:
@@ -134,7 +127,7 @@ class QuizGame:
             answers.append(after)
             idx += 1
 
-        # Then a line like: " Answer: B"
+        #Then a line like: " Answer: B"
         ans_line = lines[idx].strip()
         if ":" in ans_line:
             correct = ans_line.split(":", 1)[1].strip()
@@ -152,7 +145,7 @@ class QuizGame:
         if difficulty not in DIFFICULTIES:
             raise ValueError(f"difficulty must be one of {DIFFICULTIES}")
 
-        # Build the session question bank
+        #Build the session question bank
         pool = list(self._all_questions[grade_level.upper()][difficulty])
         if not pool:
             raise ValueError("No questions found for the selected grade level and difficulty.")
@@ -203,11 +196,11 @@ class QuizGame:
         user_letter: Optional[str] = None
 
         if user_clean:
-            # If user typed a letter
+            #If user typed a letter
             if len(user_clean) == 1 and user_clean.isalpha():
                 user_letter = user_clean.upper()
             else:
-                # Try match by answer text
+                #Try match by answer text
                 for i, choice in enumerate(answers):
                     if user_clean.lower() == choice.lower():
                         user_letter = chr(ord('A') + i)
@@ -215,7 +208,7 @@ class QuizGame:
 
         is_correct = (user_letter == correct_letter)
         if is_correct:
-            # Dynamically get points (polymorphism)
+            #Dynamically get points (polymorphism)
             if hasattr(q, "get_points"):
                 self.score += q.get_points()
             else:
@@ -224,7 +217,7 @@ class QuizGame:
         else:
             print(f"Wrong. The correct answer is {correct_letter}) {answers[ord(correct_letter)-65]}")
 
-        # advance to next question
+        #advance to next question
         self._current_index += 1
         return is_correct
 
@@ -311,7 +304,7 @@ class QuizGame:
             answer = self._prompt_answer()
             self.check_answer(answer)
 
-        # Sync score to the player and show summary
+        #Sync score to the player and show summary
         player.reset_score()
         player.add_score(self.score)
         print(f"\n\nSession complete! {player.get_name()} scored {player.get_score()} points.")
@@ -331,7 +324,7 @@ class QuizGame:
             return user_in
 
 
-#TESTING
+#TESTING/UI
 
 
 def _menu() -> None:
@@ -380,7 +373,7 @@ def main():
                 print("Error:", e)
                 continue
 
-            # Play loop with save/quit option
+            #Play loop with save/quit option
             while True:
                 q = game.display_question()
                 if q is None:
@@ -392,7 +385,7 @@ def main():
                     break
                 game.check_answer(answer)
 
-            # If finished naturally, record score
+            #If finished naturally, record score
             if game._current_index >= len(game.question_bank):
                 player.reset_score()
                 player.add_score(game.get_score())
@@ -415,7 +408,7 @@ def main():
             grade = game._session_meta.get("grade_level", "ELEMENTARY") or "ELEMENTARY"
             player = Player(name, grade)
 
-            #continue play
+            #Continue playing
             while True:
                 q = game.display_question()
                 if q is None:
